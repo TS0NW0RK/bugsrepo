@@ -3,6 +3,11 @@ collection of my bugs/vulnerabilities/writeups
 
 
 # Webkit DoS in HTMLMetaCharsetParser component
-i will publish writeup(DOS) maybe on Christmas or New Year.
+(nothing at the moment)
 
-happy holidays guys!
+
+
+# Shortcuts simplest race condition/Crash of BackgroundShortcutService
+(soon...reported to apple)
+
+
